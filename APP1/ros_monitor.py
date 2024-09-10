@@ -25,8 +25,7 @@ def quaternion_to_yaw(quat):
     # Uses TF transforms to convert a quaternion to a rotation angle around Z.
     # Usage with an Odometry message: 
     #   yaw = quaternion_to_yaw(msg.pose.pose.orientation)
-    yaw = 0
-    #(roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+    (roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
     return yaw
 
 def ip_to_uint32(ip):
@@ -36,8 +35,8 @@ class ROSMonitor(Node):
     def __init__(self):
         super().__init__('ros_monitor')
         # Add your subscriber here (odom, lidar, etc)
-        #self.sub_laser = self.create_subscription(Laser, "/scan", self.pb_service, 0)
-        #self.sub_odo = self.create_subscription(Odometry, "/odometry/filtered", self.pb_service, 0)
+        self.sub_laser = self.create_subscription(Laser, "/scan", self.laser_callback, 0)
+        self.sub_odo = self.create_subscription(Odometry, "/odom", self.odometry_callback, 0)
 
         # Current robot state:
         self.id = "10.0.1.1"
@@ -91,17 +90,6 @@ class ROSMonitor(Node):
                         response = self.handle_command(command)
                         conn.sendall(response.encode())
 
-    def handle_command(self, command):
-        if command == "RPOS":
-            x, y, theta = self.pos
-            return f"Position: {x}, {y}, {theta}"
-        elif command == "OBSF":
-            return f"Obstacle: {self.obstacle}"
-        elif command == "RBID":
-            return f"Robot ID: {self.id}"
-        else:
-            return "Unknown command"
-
     def pb_service(self):
     	self.get_logger().info(f"Beginning PositionBroadcast service")
 
@@ -125,10 +113,32 @@ class ROSMonitor(Node):
                 # Wait for a second
                 time.sleep(1)
 
+    def handle_command(self, command):
+        if command == "RPOS":
+            x, y, theta = self.pos
+            return f"Position: {x}, {y}, {theta}"
+        elif command == "OBSF":
+            return f"Obstacle: {self.obstacle}"
+        elif command == "RBID":
+            return f"Robot ID: {self.id}"
+        else:
+            return "Unknown command"
+
+    def odometry_callback(self, msg):
+        x = msg.pose.pose.position.x
+        y = msg.pose.pose.position.y
+        theta = quaternion_to_yaw(msg.pose.pose.orientation)
+        self.pos = (x, y, theta)
+
+    def laser_callback(self, msg):
+        # Check if there is an obstacle in the laser scan
+        self.obstacle = any([x < 0.5 for x in msg.ranges])
+
 def main(args=None):
     rclpy.init(args=args)
     node = ROSMonitor()
     rclpy.spin(node)
+    self.sub_odo.destroy()
     rclpy.shutdown()
 
 if __name__=="__main__":
