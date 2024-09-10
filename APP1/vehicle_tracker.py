@@ -5,7 +5,7 @@
 import socket
 from struct import *
 
-RCLI_FORMAT = "fffI"
+RCLI_FORMAT = "!fffI"
 
 def int2ip(ip):
     # Converts a 32-bit unsigned integer to an IP address.

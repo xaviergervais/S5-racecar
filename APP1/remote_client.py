@@ -6,9 +6,9 @@
 import socket
 from struct import *
 
-RPOS_FORMAT = "fffxxxx"
-OBSF_FORMAT = "Ixxxxxxxxxxxx"
-RBID_FORMAT = "Ixxxxxxxxxxxx"
+RPOS_FORMAT = "!fffxxxx"
+OBSF_FORMAT = "!Ixxxxxxxxxxxx"
+RBID_FORMAT = "!Ixxxxxxxxxxxx"
 
 def int2ip(ip):
     # Converts a 32-bit unsigned integer to an IP address.

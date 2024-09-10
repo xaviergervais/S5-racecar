@@ -15,10 +15,10 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from tf_transformations import euler_from_quaternion
 
-RPOS_FORMAT = "fffxxxx"
-OBSF_FORMAT = "Ixxxxxxxxxxxx"
-RBID_FORMAT = "Ixxxxxxxxxxxx"
-RCLI_FORMAT = "fffI"
+RPOS_FORMAT = "!fffxxxx"
+OBSF_FORMAT = "!Ixxxxxxxxxxxx"
+RBID_FORMAT = "!Ixxxxxxxxxxxx"
+RCLI_FORMAT = "!fffI"
 
 HOST = "10.0.1.1"
 BROADCAST = "10.0.1.255"
