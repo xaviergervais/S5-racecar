@@ -17,10 +17,18 @@ def main():
 
         # Start listening for any broadcasted message
         print(f"Listening for broadcasted data on {HOST}:{PORT}")
-        while True:
-            data, addr = s.recvfrom(1024)
-            message = data.decode()
-            print(f"Received message: {message} from {addr}")
+
+        #Listen to data until the user interrupts the program
+        try:
+            while True:
+                data, addr = s.recvfrom(1024)
+                message = data.decode()
+                print(f"Received message: {message} from {addr}")
+        except KeyboardInterrupt:
+            pass
+
+        # Close the connection
+        s.close()
 
 if __name__ == "__main__":
     main()

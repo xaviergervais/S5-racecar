@@ -29,6 +29,9 @@ def main():
             # Receive the response from the ROSMonitor
             data = s.recv(1024)
             print(f"Received: {data.decode()}")
+        
+        # Close the connection
+        s.close()
 
 if __name__ == "__main__":
     main()

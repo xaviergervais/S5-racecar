@@ -25,18 +25,16 @@ def quaternion_to_yaw(quat):
     # Uses TF transforms to convert a quaternion to a rotation angle around Z.
     # Usage with an Odometry message: 
     #   yaw = quaternion_to_yaw(msg.pose.pose.orientation)
-    yaw = 123
-    #(roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+    (roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
     return yaw
 
 def ip_to_uint32(ip):
     return unpack("!I", socket.inet_aton(ip))[0]
 
-
 class ROSMonitor(Node):
     def __init__(self):
         super().__init__('ros_monitor')
-        # Add your subscriber here (odom? laserscan?):
+        # Add your subscriber here (odom, lidar, etc)
         #self.sub_laser = self.create_subscription(Laser, "/scan", self.position_broadcast_service, 0)
         #self.sub_odo = self.create_subscription(Odometry, "/odometry/filtered", self.position_broadcast_service, 0)
 
@@ -45,14 +43,14 @@ class ROSMonitor(Node):
         self.pos = (0,0,0)
         self.obstacle = False
 
-        # Params :
+        # Params
         self.remote_request_port = self.declare_parameter('remote_request_port', 65432).value
         self.pos_broadcast_port = self.declare_parameter('pos_broadcast_port', 65431).value
 
-        # Thread for RemoteRequest handling:
+        # Thread for RemoteRequest handling
         self.rr_thread = threading.Thread(target=self.rr_loop)
 
-         # Thread for Position Broadcasting:
+        # Thread for Position Broadcasting
         self.pb_thread = threading.Thread(target=self.position_broadcast_service)
 
         self.get_logger().info("ROSMonitor started.")
