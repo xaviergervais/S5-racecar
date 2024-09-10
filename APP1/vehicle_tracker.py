@@ -5,6 +5,12 @@
 import socket
 from struct import *
 
+RCLI_FORMAT = "fffI"
+
+def int2ip(ip):
+    # Converts a 32-bit unsigned integer to an IP address.
+    return socket.inet_ntoa(pack("!I", ip))
+
 def main():
     # Prompt for the IP address of the PositionBroadcast
     HOST = input("Enter the IP address of the PositionBroadcast: ")
@@ -22,8 +28,9 @@ def main():
         try:
             while True:
                 data, addr = s.recvfrom(1024)
-                message = data.decode()
-                print(f"Received message: {message} from {addr}")
+                x, y, theta, ip_int = unpack(RCLI_FORMAT, data)
+                ip_str = int2ip(id_u)
+                print(f"Received message: x = {x}, y = {y}, theta = {theta}, id = {ip_str}")
         except KeyboardInterrupt:
             pass
 

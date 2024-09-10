@@ -6,6 +6,14 @@
 import socket
 from struct import *
 
+RPOS_FORMAT = "fffxxxx"
+OBSF_FORMAT = "Ixxxxxxxxxxxx"
+RBID_FORMAT = "Ixxxxxxxxxxxx"
+
+def int2ip(ip):
+    # Converts a 32-bit unsigned integer to an IP address.
+    return socket.inet_ntoa(pack("!I", ip))
+
 def main():
     # Prompt for the IP address of the ROSMonitor
     HOST = input("Enter the IP address of the ROSMonitor: ")
@@ -28,7 +36,21 @@ def main():
 
             # Receive the response from the ROSMonitor
             data = s.recv(1024)
-            print(f"Received: {data.decode()}")
+
+            # Decode the response
+            if command.lower() == 'rpos':
+                x, y, theta = unpack(RPOS_FORMAT, data)
+                message = f"Received message: x = {x}, y = {y}, theta = {theta}"
+            elif command.lower() == 'obsf':
+                obstacle = unpack(OBSF_FORMAT, data)
+                message = f"Received message: obstacle = {obstacle}"
+            elif command.lower() == 'rbid':
+                ip_int = unpack(RBID_FORMAT, data)
+                ip_str = int2ip(ip_int)
+                message = f"Received message: id = {ip_str}"
+            
+            # Print the response
+            print(message)
         
         # Close the connection
         s.close()

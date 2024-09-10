@@ -15,6 +15,11 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from tf_transformations import euler_from_quaternion
 
+RPOS_FORMAT = "fffxxxx"
+OBSF_FORMAT = "Ixxxxxxxxxxxx"
+RBID_FORMAT = "Ixxxxxxxxxxxx"
+RCLI_FORMAT = "fffI"
+
 HOST = "10.0.1.1"
 BROADCAST = "10.0.1.255"
 
@@ -25,6 +30,10 @@ def quaternion_to_yaw(quat):
     (roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
     return yaw
 
+def ip2int(ip):
+    # Converts an IP address to a 32-bit unsigned integer.
+    return unpack("!I", socket.inet_aton(ip))[0]
+
 class ROSMonitor(Node):
     def __init__(self):
         super().__init__('ros_monitor')
@@ -33,7 +42,7 @@ class ROSMonitor(Node):
         self.sub_odo = self.create_subscription(Odometry, "/odom", self.odometry_callback, 0)
 
         # Current robot state:
-        self.id = "10.0.1.1"
+        self.id = ip2int(HOST) 
         self.pos = (0,0,0)
         self.obstacle = False
 
@@ -81,8 +90,7 @@ class ROSMonitor(Node):
 
                         # Decodes the command and uses handle_command() to reply
                         command = data.decode().strip()
-                        response = self.handle_command(command)
-                        conn.sendall(response.encode())
+                        conn.sendall(self.handle_command(command))
 
     def pb_service(self):
     	self.get_logger().info(f"Beginning PositionBroadcast service")
@@ -91,13 +99,13 @@ class ROSMonitor(Node):
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             while True:
-                # Update the position data (TBD)
+                # Encoding the message data
                 x, y, theta = self.pos
-                message = f"{x}, {y}, {theta}, {self.id}"
+                message = pack(RCLI_FORMAT, x, y, theta, self.id)
 
                 #Try sending the message through the socket
                 try:
-                    s.sendto(message.encode(), (BROADCAST, self.pos_broadcast_port))
+                    s.sendto(message, (BROADCAST, self.pos_broadcast_port))
                     self.get_logger().info(message)
                 except PermissionError as e:
                     self.get_logger().error(f"Permission Error in PositionBroadcast: {e}")
@@ -108,13 +116,13 @@ class ROSMonitor(Node):
     def handle_command(self, command):
         if command == "RPOS":
             x, y, theta = self.pos
-            return f"Position: {x}, {y}, {theta}"
+            return pack(RPOS_FORMAT, x, y, theta)
         elif command == "OBSF":
-            return f"Obstacle: {self.obstacle}"
+            return pack(OBSF_FORMAT, self.obstacle)
         elif command == "RBID":
-            return f"Robot ID: {self.id}"
+            return pack(RBID_FORMAT, self.id)
         else:
-            return "Unknown command"
+            return null
 
     def odometry_callback(self, msg):
         x = msg.pose.pose.position.x
