@@ -13,7 +13,7 @@ import time
 
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
-#from tf_transformations import euler_from_quaternion
+from tf_transformations import euler_from_quaternion
 
 HOST = "10.0.1.1"
 BROADCAST = "10.42.0.255"
@@ -35,7 +35,7 @@ class ROSMonitor(Node):
     def __init__(self):
         super().__init__('ros_monitor')
         # Add your subscriber here (odom, lidar, etc)
-        self.sub_laser = self.create_subscription(Laser, "/scan", self.laser_callback, 0)
+        self.sub_laser = self.create_subscription(LaserScan, "/scan", self.laser_callback, 0)
         self.sub_odo = self.create_subscription(Odometry, "/odom", self.odometry_callback, 0)
 
         # Current robot state:
@@ -131,8 +131,9 @@ class ROSMonitor(Node):
         self.pos = (x, y, theta)
 
     def laser_callback(self, msg):
-        # Check if there is an obstacle in the laser scan
-        self.obstacle = any([x < 0.5 for x in msg.ranges])
+        # Check if there is an obstacle in the lidar scan's range
+        sorted_ranges = sorted(msg.ranges)
+        self.obstacle = (sorted_ranges[4] < 1.0)
 
 def main(args=None):
     rclpy.init(args=args)
