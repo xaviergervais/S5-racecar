@@ -42,10 +42,10 @@ def main():
                 x, y, theta = unpack(RPOS_FORMAT, data)
                 message = f"Received message: x = {x}, y = {y}, theta = {theta}"
             elif command.lower() == 'obsf':
-                obstacle = unpack(OBSF_FORMAT, data)
+                obstacle, = unpack(OBSF_FORMAT, data)
                 message = f"Received message: obstacle = {obstacle}"
             elif command.lower() == 'rbid':
-                ip_int = unpack(RBID_FORMAT, data)
+                ip_int, = unpack(RBID_FORMAT, data)
                 ip_str = int2ip(ip_int)
                 message = f"Received message: id = {ip_str}"
             
