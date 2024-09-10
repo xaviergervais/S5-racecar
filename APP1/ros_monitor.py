@@ -1,4 +1,8 @@
-#!/usr/bin/env python
+# ROS Monitor
+# This node :
+# - listens for remote information requests (commands) on a TCP port
+# - broadcasts the robot's position on a UDP port
+# Team 12 - Edouard Barrimo, Xavier Gervais, Sami Ghoul-Duclos, Étienne Renaud
 
 import rclpy
 from rclpy.node import Node
@@ -103,12 +107,6 @@ class ROSMonitor(Node):
                 except PermissionError as e:
                     self.get_logger().error(f"PermissionError: {e}")
                 time.sleep(1)  # Broadcast every second
-
-
-  
-
-
-
 
 def main(args=None):
     rclpy.init(args=args)

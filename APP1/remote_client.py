@@ -1,20 +1,21 @@
-#!/usr/bin/env python3
+# RemoteClient
+# Connects to ROSMonitor on port 65432 through a TCP/IP socket
+# Sends commands to ROSMonitor and prints the response
+# Team 12 - Edouard Barrimo, Xavier Gervais, Sami Ghoul-Duclos, Étienne Renaud
 
 import socket
 from struct import *
 
-#!/usr/bin/env python3
-
-import socket
-
 def main():
     # Prompt for the IP address of the ROSMonitor
-    host = input("Enter the IP address of the ROSMonitor: ")
-    port = 65432  # The port on which the ROSMonitor is listening
+    HOST = input("Enter the IP address of the ROSMonitor: ")
+    PORT = 65432  # The PORT on which the ROSMonitor is listening
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
-        print(f"Connected to {host}:{port}")
+        #Set the socket as reusable and bind it to the appropriate IP/port
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.connect((HOST, PORT))
+        print(f"Connected to {HOST}:{PORT}")
 
         while True:
             # Prompt for the command
@@ -31,6 +32,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

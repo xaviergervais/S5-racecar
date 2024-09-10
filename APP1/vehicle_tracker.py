@@ -1,16 +1,21 @@
-#!/usr/bin/env python
+# VehicleTracker
+# Listens for UDP broadcast data on a specific port
+# Team 12 - Edouard Barrimo, Xavier Gervais, Sami Ghoul-Duclos, Étienne Renaud
 
 import socket
 from struct import *
 
-# This process should listen to a different port than the RemoteRequest client.
-PORT = 65431
-
 def main():
+    # Prompt for the IP address of the PositionBroadcast
     HOST = input("Enter the IP address of the PositionBroadcast: ")
+    PORT = 65431
+
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        #s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        #Set the socket as reusable and bind it to the appropriate IP/port
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((HOST, PORT))
+
+        # Start listening for any broadcasted message
         print(f"Listening for broadcasted data on {HOST}:{PORT}")
         while True:
             data, addr = s.recvfrom(1024)
