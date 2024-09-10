@@ -16,10 +16,7 @@ from sensor_msgs.msg import LaserScan
 from tf_transformations import euler_from_quaternion
 
 HOST = "10.0.1.1"
-BROADCAST = "10.42.0.255"
-
-# example:
-#   python ros_monitor.py scan:=/racecar/scan odom:=/racecar/odometry/filtered
+BROADCAST = "10.0.1.255"
 
 def quaternion_to_yaw(quat):
     # Uses TF transforms to convert a quaternion to a rotation angle around Z.
@@ -27,9 +24,6 @@ def quaternion_to_yaw(quat):
     #   yaw = quaternion_to_yaw(msg.pose.pose.orientation)
     (roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
     return yaw
-
-def ip_to_uint32(ip):
-    return unpack("!I", socket.inet_aton(ip))[0]
 
 class ROSMonitor(Node):
     def __init__(self):
@@ -93,15 +87,13 @@ class ROSMonitor(Node):
     def pb_service(self):
     	self.get_logger().info(f"Beginning PositionBroadcast service")
 
-    	ip_address = ip_to_uint32(BROADCAST)
-
     	with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             while True:
                 # Update the position data (TBD)
                 x, y, theta = self.pos
-                message = f"{x}, {y}, {theta}, {ip_address}"
+                message = f"{x}, {y}, {theta}, {self.id}"
 
                 #Try sending the message through the socket
                 try:
@@ -144,5 +136,3 @@ def main(args=None):
 
 if __name__=="__main__":
     main()
-
-
