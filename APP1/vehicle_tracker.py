@@ -29,7 +29,7 @@ def main():
             while True:
                 data, addr = s.recvfrom(1024)
                 x, y, theta, ip_int = unpack(RCLI_FORMAT, data)
-                ip_str = int2ip(id_u)
+                ip_str = int2ip(ip_int)
                 print(f"Received message: x = {x}, y = {y}, theta = {theta}, id = {ip_str}")
         except KeyboardInterrupt:
             pass

@@ -106,7 +106,7 @@ class ROSMonitor(Node):
                 #Try sending the message through the socket
                 try:
                     s.sendto(message, (BROADCAST, self.pos_broadcast_port))
-                    self.get_logger().info(message)
+                    self.get_logger().info(f"Sending: x = {x}, y = {y}, theta = {theta}, id = {ip_str}")
                 except PermissionError as e:
                     self.get_logger().error(f"Permission Error in PositionBroadcast: {e}")
 
