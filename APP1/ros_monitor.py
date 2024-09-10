@@ -25,7 +25,8 @@ def quaternion_to_yaw(quat):
     # Uses TF transforms to convert a quaternion to a rotation angle around Z.
     # Usage with an Odometry message: 
     #   yaw = quaternion_to_yaw(msg.pose.pose.orientation)
-    (roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
+    yaw = 0
+    #(roll, pitch, yaw) = euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
     return yaw
 
 def ip_to_uint32(ip):
@@ -35,8 +36,8 @@ class ROSMonitor(Node):
     def __init__(self):
         super().__init__('ros_monitor')
         # Add your subscriber here (odom, lidar, etc)
-        #self.sub_laser = self.create_subscription(Laser, "/scan", self.position_broadcast_service, 0)
-        #self.sub_odo = self.create_subscription(Odometry, "/odometry/filtered", self.position_broadcast_service, 0)
+        #self.sub_laser = self.create_subscription(Laser, "/scan", self.pb_service, 0)
+        #self.sub_odo = self.create_subscription(Odometry, "/odometry/filtered", self.pb_service, 0)
 
         # Current robot state:
         self.id = "10.0.1.1"
@@ -48,31 +49,44 @@ class ROSMonitor(Node):
         self.pos_broadcast_port = self.declare_parameter('pos_broadcast_port', 65431).value
 
         # Thread for RemoteRequest handling
-        self.rr_thread = threading.Thread(target=self.rr_loop)
+        self.rr_thread = threading.Thread(target=self.rr_service)
 
         # Thread for Position Broadcasting
-        self.pb_thread = threading.Thread(target=self.position_broadcast_service)
-
-        self.get_logger().info("ROSMonitor started.")
+        self.pb_thread = threading.Thread(target=self.pb_service)
 
         # Start the threads
         self.rr_thread.start()
         self.pb_thread.start()
 
-    def rr_loop(self):
+    def rr_service(self):
+        self.get_logger().info(f"Beginning RemoteRequest service")
+
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1) 	
             s.bind((HOST, self.remote_request_port))
-            s.listen()
-            self.get_logger().info(f"Listening for remote requests on port {self.remote_request_port}")
+
             while rclpy.ok():
+                # Listen for incoming connections
+                # Will execute again if connexion is broken
+                s.listen(1)
+                self.get_logger().info(f"Listening for remote requests on port {self.remote_request_port}")
                 conn, addr = s.accept()
+                
                 with conn:
-                    self.get_logger().info(f"Connected by {addr}")
+                    self.get_logger().info(f"Connected to {addr}")
+
+                    # Reply loop, breaks when connexion is closed
                     while True:
+                        # Receives the command
                         data = conn.recv(1024)
+
+                        # Breaks reply loop if socket is closed by client
                         if not data:
+                            self.get_logger().info(f"Connexion closed by client. Dissconnecting...")
+                            conn.close()
                             break
+
+                        # Decodes the command and uses handle_command() to reply
                         command = data.decode().strip()
                         response = self.handle_command(command)
                         conn.sendall(response.encode())
@@ -88,29 +102,34 @@ class ROSMonitor(Node):
         else:
             return "Unknown command"
 
-    def position_broadcast_service(self):
-    	self.get_logger().info(f"1")
+    def pb_service(self):
+    	self.get_logger().info(f"Beginning PositionBroadcast service")
+
     	ip_address = ip_to_uint32(BROADCAST)
-    	self.get_logger().info(f"2")
+
     	with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             while True:
-                # Broadcast the position
+                # Update the position data (TBD)
                 x, y, theta = self.pos
                 message = f"{x}, {y}, {theta}, {ip_address}"
+
+                #Try sending the message through the socket
                 try:
                     s.sendto(message.encode(), (BROADCAST, self.pos_broadcast_port))
                     self.get_logger().info(message)
                 except PermissionError as e:
-                    self.get_logger().error(f"PermissionError: {e}")
-                time.sleep(1)  # Broadcast every second
+                    self.get_logger().error(f"Permission Error in PositionBroadcast: {e}")
+
+                # Wait for a second
+                time.sleep(1)
 
 def main(args=None):
     rclpy.init(args=args)
     node = ROSMonitor()
     rclpy.spin(node)
-    rclpy.shutdown()   
+    rclpy.shutdown()
 
 if __name__=="__main__":
     main()
