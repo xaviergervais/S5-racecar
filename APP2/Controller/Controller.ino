@@ -333,7 +333,7 @@ void ctl(int dt_low){
 
   //TODO: VOUS DEVEZ COMPLETEZ LA DERIVEE FILTRE ICI
   float vel_raw = (enc_now - enc_old) * tick2m / dt_low * 1000;
-  float alpha   = 0.8; //Filter constant, 1 = passthrough, 0 = blocking
+  float alpha   = 0.1; //Filter constant, 1 = passthrough, 0 = blocking
   float vel_fil = vel_raw*alpha + (1 - alpha)*vel_old; //EMA Filter
   
   // Propulsion Controllers
