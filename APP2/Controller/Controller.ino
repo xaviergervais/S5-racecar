@@ -332,7 +332,7 @@ void ctl(int dt_low){
   
   // Velocity computation
 
-  //TODO: VOUS DEVEZ COMPLETEZ LA DERIVEE FILTRE ICI
+  //Derivative and EMA filtration
   float vel_raw = (enc_now - enc_old) * tick2m / dt_low * 1000;
   float alpha   = 0.1; //Filter constant, 1 = passthrough, 0 = blocking
   float vel_fil = vel_raw*alpha + (1 - alpha)*vel_old; //EMA Filter
@@ -367,11 +367,11 @@ void ctl(int dt_low){
     
     float vel_ref, vel_error;
 
-    //TODO: VOUS DEVEZ COMPLETEZ LE CONTROLLEUR SUIVANT
+    //PI CONTROLLER
     vel_ref       = dri_ref; 
     vel_error     = vel_ref - vel_fil;
     vel_error_int = vel_error_int + (vel_ref - vel_fil) * dt_low / 1000;
-    dri_cmd       = vel_kp * vel_error; // proportionnal only
+    dri_cmd       = vel_kp * vel_error + vel_ki * vel_error;
     
     dri_pwm    = cmd2pwm( dri_cmd ) ;
 
@@ -383,11 +383,11 @@ void ctl(int dt_low){
     
     float pos_ref, pos_error, pos_error_ddt;
 
-    //TODO: VOUS DEVEZ COMPLETEZ LE CONTROLLEUR SUIVANT
-    pos_ref       = dri_ref; 
+    //PID CONTROLLER
+    pos_ref       = dri_ref;
     pos_error     = dri_ref - pos_now;
     pos_error_ddt = (pos_error - (dri_ref - pos_old)) / dt_low * 1000;
-    pos_error_int = pos_error_int + (dri_ref - pos_now) * dt_low / 1000; 
+    pos_error_int = pos_error_int + (dri_ref - pos_now) * dt_low / 1000;
     
     // Anti wind-up
     if ( pos_error_int > pos_ei_sat ){
