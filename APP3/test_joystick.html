@@ -1,0 +1,95 @@
+<body>
+    <h1>Robot Controller Testing</h1>
+    <h2>Status</h2>
+    <textarea readonly id="ta_status">No Controller Connected</textarea>
+
+    <h2>Commands</h2>
+    <h3>Y translate</h3>
+    <progress id="pb_yt" value="1" max="2"></progress>
+    <h3>Z rotate</h3>
+    <progress id="pb_zr" value="1" max="2"></progress>
+
+    <h2>Button Presses</h2>
+    <textarea readonly id="ta_buttons" rows="8"></textarea>
+
+    <h2>ESTOP</h2>
+    <textarea readonly id="ta_estop">Inactive</textarea>
+</body>
+
+<script type="text/javascript">
+//Global gamepad object
+let gamepadIndex;
+let gamepadConnected = false;
+let estop = false;
+
+//Letter codes
+space_bar = 32;
+r_letter = 82;
+
+//Event listener for gamepad connexion
+window.addEventListener('gamepadconnected', (event) => {
+    gamepadIndex = event.gamepad.index;
+    gamepadConnected = true;
+    console.log("Gamepad connected:", event.gamepad);
+});
+
+// Event listener for gamepad disconnection
+window.addEventListener("gamepaddisconnected", (event) => {
+    gamepadIndex = undefined;
+    gamepadConnected = false;
+    console.log("Gamepad disconnected:", event.gamepad);
+    document.getElementById("ta_status").textContent=`No Controller Connected`;
+});
+
+//Detect keypresses on the page
+window.addEventListener('keydown', (event) => {
+    //Trigger ESTOP on spacebar press
+    if (event.code === 'Space') {
+        estop = true;
+        console.log('ESTOP triggered');
+        document.getElementById("ta_estop").textContent=`ESTOP TRIGGERED!`;
+    }
+    //Reset ESTOP on CTRL+R press
+    else if (event.altKey && (event.key === 'r' || event.key === 'R')) {
+        estop = false;
+        console.log('ESTOP reset');
+        document.getElementById("ta_estop").textContent=`Inactive`;
+    }
+});
+
+setInterval(() => {
+    if(gamepadIndex !== undefined) {
+        // a gamepad is connected and has an index
+        const myGamepad = navigator.getGamepads()[gamepadIndex];
+        document.getElementById("ta_status").textContent=`Currently connected to ${myGamepad.id}`;
+
+        //Yt command calculation
+        ycommand = myGamepad.buttons[7].value - myGamepad.buttons[6].value;
+        if(ycommand < 0.05 && ycommand > -0.05) ycommand = 0;
+        //ycommand = ycommand**3;
+
+        //Zr command calculation
+        zcommand = myGamepad.axes[0];
+        if(zcommand < 0.05 && zcommand > -0.05) zcommand = 0;
+        //zcommand = zcommand**3;
+
+        if(estop){
+            ycommand = 0;
+            zcommand = 0;
+        }
+
+        //Show Yt and Zr commands
+        document.getElementById("pb_yt").value = ycommand + 1;
+        document.getElementById("pb_zr").value = zcommand + 1;
+
+        //Show pressed buttons (excluding 6 and 7)
+        document.getElementById("ta_buttons").textContent="";
+        myGamepad.buttons.map(e => e.pressed).forEach((isPressed, buttonIndex) => {
+            if(isPressed && buttonIndex != 6 && buttonIndex != 7) {
+                // button is pressed; indicate this on the page
+                document.getElementById("ta_buttons").textContent+=`${buttonIndex} pressed\r`;
+            }
+        })
+    }
+}, 100) // print buttons that are pressed 10 times per second
+</script>
