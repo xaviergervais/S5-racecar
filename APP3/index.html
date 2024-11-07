@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<!-- 
+==References==
+Server-side:
+* http://docs.ros.org/indigo/api/roswww/html/
+* http://wiki.ros.org/web_video_server
+* http://wiki.ros.org/rosbridge_suite/Tutorials/RunningRosbridge
+
+Client-side:
+* http://wiki.ros.org/roslibjs/Tutorials/BasicRosFunctionality
+* https://getbootstrap.com/docs/4.0/getting-started/introduction/
+* https://getbootstrap.com/docs/4.0/layout/grid/
+* https://github.com/jeromeetienne/virtualjoystick.js
+-->
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <title>Interface de contrôle - Équipe 12</title>
+<!-- 
+    <script type = "text/javascript" src = "https://cdn.jsdelivr.net/npm/eventemitter2@6.4/lib/eventemitter2.min.js"></script>
+    <script type = "text/javascript" src = "https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+    <script type = "text/javascript" type = "text/javascript">
+    	
+    	var ros = new ROSLIB.Ros ({
+	     url : 'ws://localhost:9090'
+	});
+-->
+    
+
+</head>
+
+<body onLoad="connectROS()">
+
+  <!-- Menu BEGIN-->
+  <div class="collapse" id="navbarToggleExternalContent">
+    <div class="bg-dark p-4" id="toggleBar">
+      <h6 class="text-white h4">Configuration</h6>
+      <p class="text-white h6">Utilisateur:</p>
+      <p class="text-white h6">Adresse IP:</p>
+    </div>
+  </div>
+
+<nav class="navbar navbar-dark bg-dark">
+  <div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarToggleExternalContent">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+  </div>
+</nav>
+<!-- Menu END-->
+
+<!-- Main layout BEGIN-->
+<div class="container-fluid">
+    
+  </div>
+    <div class="row">
+    
+      <div class="col-4">
+      
+        <div class="row">
+          <div class="col-12">
+            <h1>Statut</h1>
+      	    <textarea id="Statut" name="Statut" readonly>Stadacone Québec Kabak fortifié</textarea><br>
+      	    <button type="button" class="bg-dark text-white"> Effacez </button>
+      	  </div>
+      	</div>
+      	
+      	<div class="row">
+      	  <div class="col-12">
+           <h1>Contrôle</h1>
+           <table>
+             <tr>
+               <th></th>
+               <th> <button type="button" onmousedown="avance()" onmouseup="arrete()" class="bg-dark text-white"> <i class="arrow up" ></i> </button> </th>
+               <th></th>
+             </tr>
+             <tr>
+               <th> <button type="button" onclick="gauche()" class="bg-dark text-white"> <i class="arrow left" ></i> </button> </th>
+               <th> <button type="button" onclick="toutDroit()" class="bg-dark text-white"> <span class="dot" ></span> </button> </th>
+               <th> <button type="button" onclick="droite()" class="bg-dark text-white"> <i class="arrow right" ></i> </button> </th>
+             </tr>
+             <tr>
+               <th></th>
+               <th> <button type="button" onmousedown="recule()" onmouseup="arrete()" class="bg-dark text-white"> <i class="arrow down" ></i> </button> </th>
+               <th></th>
+             </tr>
+           </table>
+
+      	  </div>
+      	</div>
+      	
+      </div>
+      
+      <div class="col-md">
+      	<h1>Caméra</h1>
+      	<img id="bigpic" src="bigpic" alt="Stream de la caméra" style="display:none" class="camera-img"></img>
+      	
+      	<button onclick= "ShowImage()" type="button" class="bg-grey" id="btn1"> Démarrez diffusion en direct </button> 
+      	<script>
+      	   function ShowImage(){
+      	   var image="http://10.42.0.1:8080/stream?topic=/racecar/raspicam_node/image"
+      	   if (document.getElementById('bigpic').src == image){
+      	     document.getElementById('bigpic').src = 'bigpic'
+      	     document.getElementById('bigpic').style.display = 'none';
+      	     document.getElementById('btn1').textContent="Démarrez diffusion en direct";
+      	   }
+      	   else{
+      	     document.getElementById('bigpic').src = image.replace('90x90','225x225')
+      	     document.getElementById('bigpic').style.display = 'block';
+      	     document.getElementById('btn1').textContent="Arrêtez diffusion en direct";
+      	     }
+      	   }
+      	</script>
+      </div>
+    </div>
+  </div>
+    <!-- JavaScript, import frameworks -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="js/jquery-3.3.1.slim.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/virtualjoystick.js"></script>
+    <script src="js/roslib.min.js"></script> <!-- rosbridge -->
+    
+    <!-- Custom scripts -->
+    <script>
+        // Define some global variables
+        var rbServer = null;
+        var cmdVelTopic = null;
+
+        //Some initializations after the page has been shown
+        $(document).ready(function(){
+          //document.getElementById("log").value = 'Default text\n'
+        });
+
+        // Define some functions
+        function connectROS() {
+
+            // This function connects to the rosbridge server running on the local computer on port 9090
+            rbServer = new ROSLIB.Ros({
+                url : 'ws://' + 'localhost' + ':9090'
+            });
+
+            rbServer.on('connection', function() {
+                console.log('Connected to websocket server.');
+                
+                // These lines create a topic object as defined by roslibjs
+                cmdVelTopic = new ROSLIB.Topic({
+                    ros : rbServer,
+                    name : '/prop_cmd',
+                    messageType : 'geometry_msgs/Twist'
+                });
+                document.getElementById('toggleBar').class="bg-green p-4";
+            });
+
+            rbServer.on('error', function(error) {
+                console.log('Error connecting to websocket server: ', error);
+            });
+
+            rbServer.on('close', function() {
+                console.log('Connection to websocket server closed.');
+            });
+        }
+
+
+        // These lines create a message that conforms to the structure of the Twist defined in our ROS installation
+        // It initalizes all properties to zero. They will be set to appropriate values before we publish this message.
+        var twist = new ROSLIB.Message({
+            linear : {
+                x : 0.0,
+                y : 0.0,
+                z : 2.0 // Set control mode to 2
+            },
+            angular : {
+                x : 0.0,
+                y : 0.0,
+                z : 0.0
+            }
+        });
+        
+        function avance(){
+          twist.linear.x = 1.0;
+        }
+        
+        function recule(){
+          twist.linear.x = -1.0;
+        }
+        
+        function arrete(){
+          twist.linear.x = 0.0;
+        }
+        
+        function gauche(){
+          twist.angular.z = 1.0;
+        }
+        
+        function droite(){
+          twist.angular.z = -1.0;
+        }
+        
+        function toutDroit(){
+          twist.angular.z = 0.0;
+        }
+
+        setInterval(function(){
+            if(cmdVelTopic != null) {
+              // Publish the message 
+              cmdVelTopic.publish(twist);
+            }
+        }, 200);
+        
+     </script>
+</body>
+</html>
