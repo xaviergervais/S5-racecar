@@ -54,13 +54,13 @@ long time_micros_last = 0;
 
 //TODO: VOUS DEVEZ DETERMINEZ DES BONS PARAMETRES SUIVANTS
 const float filter_rc  =  0.1;
-const float vel_kp     =  10.0; 
-const float vel_ki     =  0.0; 
+const float vel_kp     =  15.0;
+const float vel_ki     =  5.0;
 const float vel_kd     =  0.0;
-const float pos_kp     =  1.0; 
-const float pos_kd     =  0.0;
-const float pos_ki     =  0.0; 
-const float pos_ei_sat =  10000.0; 
+const float pos_kp     =  3.0;
+const float pos_kd     =  1.0;
+const float pos_ki     =  1.0;
+const float pos_ei_sat =  10000.0;
 
 // Loop period 
 const unsigned long time_period_low   = 2;    // 500 Hz for internal PID loop
@@ -367,7 +367,7 @@ void ctl(int dt_low){
     
     float vel_ref, vel_error;
 
-    //PI CONTROLLER
+    //TODO: VOUS DEVEZ COMPLETEZ LE CONTROLLEUR SUIVANT
     vel_ref       = dri_ref; 
     vel_error     = vel_ref - vel_fil;
     vel_error_int = vel_error_int + (vel_ref - vel_fil) * dt_low / 1000;
@@ -383,7 +383,7 @@ void ctl(int dt_low){
     
     float pos_ref, pos_error, pos_error_ddt;
 
-    //PID CONTROLLER
+    //TODO: VOUS DEVEZ COMPLETEZ LE CONTROLLEUR SUIVANT
     pos_ref       = dri_ref;
     pos_error     = dri_ref - pos_now;
     pos_error_ddt = (pos_error - (dri_ref - pos_old)) / dt_low * 1000;
@@ -463,6 +463,7 @@ void setup()
   //
   delay(3000) ;
   steeringServo.write(pwm_zer_ser) ;
+  sensorsCallback(1);
   
 }
 
@@ -522,17 +523,6 @@ void loop()
     else
       inCmdType = -1;
     }
-
-  
-
-  unsigned long dt = time_now - time_last_high;
-  if (dt > time_period_high ) {
-    
-    sensorsCallback(dt);
-    
-    time_last_high = time_now ;
-    enc_last_high = enc_now ;
-  }
 }
 
 // ======================================== CALLBACKS ========================================
@@ -542,6 +532,11 @@ void cmdCallback()
   ser_ref  = -cmdMsg.data[0]; //rad
   dri_ref  = cmdMsg.data[1];  // volt or m/s or m
   ctl_mode = cmdMsg.data[2];  // 1    or 2   or 3*/
+  
+  unsigned long dt = time_now - time_last_high;
+  sensorsCallback(dt);
+  time_last_high = time_now ;
+  enc_last_high = enc_now ;
 
   time_last_com = millis();
 }
